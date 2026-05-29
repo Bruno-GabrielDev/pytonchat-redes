@@ -1,4 +1,4 @@
-# 💬 PyChat — Chat Multi-Cliente TCP
+# 💬 PytonChat — Chat Multi-Cliente TCP
 
 Projeto de Redes de Computadores — IFSP São Carlos  
 Implementação de sockets TCP em Python com suporte a múltiplos clientes simultâneos.
