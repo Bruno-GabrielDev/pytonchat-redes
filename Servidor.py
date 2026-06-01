@@ -8,16 +8,11 @@ import socket
 import threading
 from datetime import datetime
 
-# ─── Configurações ────────────────────────────────────────────────────────────
-HOST = '0.0.0.0'   # Aceita conexões de qualquer interface de rede
-PORT = 5000        # Porta que o servidor irá escutar
-
-# ─── Estado global do servidor ────────────────────────────────────────────────
-clientes   = []   # Lista de sockets conectados
-apelidos   = []   # Lista de apelidos (mesma ordem que `clientes`)
-lock       = threading.Lock()  # Evita condições de corrida ao alterar as listas
-
-# ─── Utilitários ──────────────────────────────────────────────────────────────
+HOST = '0.0.0.0'  
+PORT = 5000        
+clientes   = []  
+apelidos   = []   
+lock       = threading.Lock()  
 
 def timestamp():
     """Retorna a hora atual formatada para logs."""
@@ -35,7 +30,7 @@ def broadcast(mensagem: bytes, remetente=None):
     Se `remetente` for fornecido, ele não recebe a própria mensagem.
     """
     with lock:
-        destinos = list(clientes)  # cópia para iterar com segurança
+        destinos = list(clientes)
 
     for cliente in destinos:
         if cliente != remetente:
@@ -79,8 +74,6 @@ def enviar_privado(remetente_socket, remetente_nick, destinatario_nick, conteudo
     remetente_socket.send(f"[Privado para {destinatario_nick}]: {conteudo}\n".encode('utf-8'))
 
 
-# ─── Handler de cada cliente ──────────────────────────────────────────────────
-
 def handle_cliente(cliente_socket):
     """
     Roda em uma thread separada para cada cliente.
@@ -91,37 +84,26 @@ def handle_cliente(cliente_socket):
             dados = cliente_socket.recv(1024)
             if not dados:
                 break
-
             mensagem = dados.decode('utf-8').strip()
-
             with lock:
                 if cliente_socket not in clientes:
                     break
                 apelido = apelidos[clientes.index(cliente_socket)]
 
-            # ── Comandos ──────────────────────────────────────────────────────
-
-            # /msg <destinatario> <texto>  →  mensagem privada
             if mensagem.startswith('/msg '):
                 partes = mensagem.split(' ', 2)
                 if len(partes) < 3:
                     cliente_socket.send(b"[Sistema] Uso: /msg <apelido> <mensagem>\n")
                 else:
                     enviar_privado(cliente_socket, apelido, partes[1], partes[2])
-
-            # /users  →  lista de usuários online
             elif mensagem == '/users':
                 with lock:
                     lista = ', '.join(apelidos) if apelidos else '(ninguém)'
                 cliente_socket.send(
                     f"[Sistema] Usuários online ({len(apelidos)}): {lista}\n".encode('utf-8')
                 )
-
-            # /sair  →  desconexão voluntária
             elif mensagem == '/sair':
                 break
-
-            # /ajuda  →  lista de comandos
             elif mensagem == '/ajuda':
                 ajuda = (
                     "[Sistema] Comandos disponíveis:\n"
@@ -131,8 +113,6 @@ def handle_cliente(cliente_socket):
                     "  /ajuda              → esta mensagem\n"
                 )
                 cliente_socket.send(ajuda.encode('utf-8'))
-
-            # ── Mensagem comum ────────────────────────────────────────────────
             else:
                 log(f"{apelido}: {mensagem}")
                 broadcast(
@@ -148,9 +128,6 @@ def handle_cliente(cliente_socket):
 
     remover_cliente(cliente_socket)
 
-
-# ─── Loop principal do servidor ───────────────────────────────────────────────
-
 def iniciar():
     """Inicializa o servidor e aguarda conexões indefinidamente."""
     servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -164,13 +141,11 @@ def iniciar():
     while True:
         cliente_socket, endereco = servidor.accept()
         log(f"Nova conexão de {endereco[0]}:{endereco[1]}")
-
-        # Protocolo de handshake: pede o apelido ao cliente
+        
         try:
             cliente_socket.send(b'NICK')
             apelido = cliente_socket.recv(1024).decode('utf-8').strip()
 
-            # Verifica se o apelido já está em uso
             with lock:
                 if apelido in apelidos:
                     cliente_socket.send(b'NICK_TAKEN')
@@ -191,7 +166,6 @@ def iniciar():
             )
             cliente_socket.send(boas_vindas.encode('utf-8'))
 
-            # Inicia thread para este cliente
             t = threading.Thread(target=handle_cliente, args=(cliente_socket,), daemon=True)
             t.start()
 
