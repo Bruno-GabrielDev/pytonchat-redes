@@ -8,12 +8,9 @@ import socket
 import threading
 import sys
 
-# ─── Configurações ────────────────────────────────────────────────────────────
-HOST = '127.0.0.1'  # Endereço IP do servidor (altere se o servidor estiver em outra máquina)
-PORT = 5000         # Porta do servidor (deve ser igual à do servidor.py)
-
-# ─── Variáveis globais ────────────────────────────────────────────────────────
-rodando = True      # Controla os loops das threads
+HOST = '127.0.0.1'  
+PORT = 5000        
+rodando = True      
 
 
 def receber(cliente: socket.socket):
@@ -31,7 +28,6 @@ def receber(cliente: socket.socket):
                 break
             print(dados.decode('utf-8'), end='')
         except OSError:
-            # Socket foi fechado (ex.: /sair digitado pelo usuário)
             break
         except Exception as e:
             if rodando:
@@ -74,13 +70,11 @@ def conectar():
     """
     global rodando
 
-    # ── Apelido ────────────────────────────────────────────────────────────────
     apelido = input("Digite seu apelido: ").strip()
     if not apelido:
         print("[Erro] Apelido não pode ser vazio.")
         sys.exit(1)
 
-    # ── Conexão ────────────────────────────────────────────────────────────────
     cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         cliente.connect((HOST, PORT))
@@ -88,8 +82,6 @@ def conectar():
         print(f"[Erro] Não foi possível conectar a {HOST}:{PORT}.")
         print("Verifique se o servidor está rodando e se HOST/PORT estão corretos.")
         sys.exit(1)
-
-    # ── Handshake de apelido ───────────────────────────────────────────────────
     try:
         sinal = cliente.recv(1024)
 
@@ -103,9 +95,6 @@ def conectar():
             print("[Erro] Resposta inesperada do servidor.")
             cliente.close()
             sys.exit(1)
-
-        # Pequena verificação: se o servidor rejeitar o apelido
-        # ele envia NICK_TAKEN logo após o envio do apelido
         import select
         pronto, _, _ = select.select([cliente], [], [], 0.3)
         if pronto:
@@ -115,7 +104,6 @@ def conectar():
                 cliente.close()
                 sys.exit(1)
             else:
-                # Era uma mensagem normal (boas-vindas), imprime
                 print(resposta.decode('utf-8'), end='')
 
     except Exception as e:
@@ -126,14 +114,12 @@ def conectar():
     print(f"[Sistema] Conectado ao servidor {HOST}:{PORT} como '{apelido}'.")
     print("[Sistema] Digite /ajuda para ver os comandos.\n")
 
-    # ── Threads ────────────────────────────────────────────────────────────────
     t_recv = threading.Thread(target=receber, args=(cliente,), daemon=True)
     t_send = threading.Thread(target=enviar,  args=(cliente,), daemon=True)
 
     t_recv.start()
     t_send.start()
-
-    # Mantém o programa vivo até uma das threads encerrar
+    
     t_recv.join()
     t_send.join()
 
