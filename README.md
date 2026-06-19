@@ -77,7 +77,7 @@ HOST = '192.168.1.10'
 
 ## 📹 Vídeo de demonstração
 
-> [Link do YouTube — adicionar aqui]
+> https://youtu.be/bXtcOT4uLQo
 
 ---
 
