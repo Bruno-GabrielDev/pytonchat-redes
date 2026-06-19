@@ -8,11 +8,13 @@ import socket
 import threading
 from datetime import datetime
 
-HOST = '0.0.0.0'  
-PORT = 5000        
-clientes   = []  
+HOST = '0.0.0.0'   
+PORT = 5000      
+
+clientes   = []   
 apelidos   = []   
 lock       = threading.Lock()  
+
 
 def timestamp():
     """Retorna a hora atual formatada para logs."""
@@ -30,7 +32,7 @@ def broadcast(mensagem: bytes, remetente=None):
     Se `remetente` for fornecido, ele não recebe a própria mensagem.
     """
     with lock:
-        destinos = list(clientes)
+        destinos = list(clientes) 
 
     for cliente in destinos:
         if cliente != remetente:
@@ -73,7 +75,6 @@ def enviar_privado(remetente_socket, remetente_nick, destinatario_nick, conteudo
     dest_socket.send(f"[Privado de {remetente_nick}]: {conteudo}\n".encode('utf-8'))
     remetente_socket.send(f"[Privado para {destinatario_nick}]: {conteudo}\n".encode('utf-8'))
 
-
 def handle_cliente(cliente_socket):
     """
     Roda em uma thread separada para cada cliente.
@@ -104,6 +105,7 @@ def handle_cliente(cliente_socket):
                 )
             elif mensagem == '/sair':
                 break
+
             elif mensagem == '/ajuda':
                 ajuda = (
                     "[Sistema] Comandos disponíveis:\n"
@@ -113,6 +115,7 @@ def handle_cliente(cliente_socket):
                     "  /ajuda              → esta mensagem\n"
                 )
                 cliente_socket.send(ajuda.encode('utf-8'))
+
             else:
                 log(f"{apelido}: {mensagem}")
                 broadcast(
@@ -128,6 +131,7 @@ def handle_cliente(cliente_socket):
 
     remover_cliente(cliente_socket)
 
+
 def iniciar():
     """Inicializa o servidor e aguarda conexões indefinidamente."""
     servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -141,7 +145,6 @@ def iniciar():
     while True:
         cliente_socket, endereco = servidor.accept()
         log(f"Nova conexão de {endereco[0]}:{endereco[1]}")
-        
         try:
             cliente_socket.send(b'NICK')
             apelido = cliente_socket.recv(1024).decode('utf-8').strip()
